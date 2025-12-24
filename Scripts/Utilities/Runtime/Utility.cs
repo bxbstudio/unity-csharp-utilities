@@ -6614,9 +6614,9 @@ namespace Utilities
 		}
 
 		/// <summary>
-		/// Calculates the value that would result from linearly interpolating between a and b by the interpolation parameter t.
-		/// Performs normalized linear interpolation (nlerp) between quaternions without clamping the t parameter.
-		/// Provides a more efficient alternative to slerp for many rotation interpolation cases.
+		/// Calculates the value that would result from sphericaly interpolating between a and b by the interpolation parameter t.
+		/// Performs normalized spherical interpolation (slerp) between quaternions without clamping the t parameter.
+		/// Provides a more efficient alternative to nlerp for many rotation interpolation cases.
 		/// </summary>
 		/// <param name="a">The start rotation as quaternion.</param>
 		/// <param name="b">The end rotation as quaternion.</param>
@@ -6624,7 +6624,7 @@ namespace Utilities
 		/// <returns>The quaternion resulting from the normalized linear interpolation.</returns>
 		public static quaternion LerpUnclamped(quaternion a, quaternion b, float t)
 		{
-			return math.nlerp(a, b, t);
+			return math.slerp(a, b, t);
 		}
 
 		/// <summary>

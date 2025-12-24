@@ -1,7 +1,7 @@
 # Unity-CSharp-Utilities
 
 [![Unity Version](https://img.shields.io/badge/Unity-2020.3%2B-blue.svg)](https://unity.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Package](https://img.shields.io/badge/UPM-dev.bxbstudio.utilities-blue)](https://github.com/BxB-Studio/Unity-CSharp-Utilities)
 
 The Unity CSharp Utilities library provides a comprehensive collection of utility functions, extension methods, and data structures that are missing from the Unity Engine, helping developers write cleaner, more efficient code.
@@ -136,7 +136,7 @@ We welcome contributions to this library! If you'd like to contribute:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
 ---
 
