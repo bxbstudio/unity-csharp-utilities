@@ -1,142 +1,195 @@
-# Unity-CSharp-Utilities
+# Utilities
 
 [![Unity Version](https://img.shields.io/badge/Unity-2020.3%2B-blue.svg)](https://unity.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Package](https://img.shields.io/badge/UPM-dev.bxbstudio.utilities-blue)](https://github.com/BxB-Studio/Unity-CSharp-Utilities)
 
-The Unity CSharp Utilities library provides a comprehensive collection of utility functions, extension methods, and data structures that are missing from the Unity Engine, helping developers write cleaner, more efficient code.
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Usage Examples](#usage-examples)
-- [Documentation](#documentation)
-- [Core Components](#core-components)
-- [Contributing](#contributing)
-- [License](#license)
+`dev.bxbstudio.utilities` is a Unity utility package that groups runtime helpers, nested math/value types, serializable wrappers, editor tooling, and a small set of core patterns such as singletons and managed asset references.
 
 ## Features
 
-- **Rich Extension Methods**: Extend Unity's built-in classes with useful methods
-- **Math Utilities**: Additional math functions not available in Unity's Mathf
-- **Serialization Helpers**: Easily serialize and deserialize data
-- **Editor Tools**: Streamlined editor workflows and utilities
-- **UI Components**: Helper methods for Unity UI components
-- **Specialized Data Structures**: Custom serializable types
-- **Transform Utilities**: Common transform operations made simple
-- **Performance Optimizations**: Efficient alternatives to common operations
-- **Cross-Platform Compatibility**: Works across all platforms Unity supports
+- Runtime extension methods for `Transform`, `AnimationCurve`, `string`, `Enum`, and `Color`
+- Large `Utility` surface for units, intervals, math helpers, bounds helpers, render-pipeline checks, screenshots, and asset helpers
+- `Bezier.Path` utilities for building and sampling spline paths
+- File and `Resources`-based binary serialization through `DataSerializationUtility<T>`
+- Core helpers such as `BehaviourSingleton<T>`, `ScriptableSingleton<T>`, `GameLogger`, and `SerializedDictionary<TKey, TValue>`
+- Managed references for scene assets and `Resources` assets with editor drawers
+- Editor utilities for scripting define symbols, debug menu items, layers management, and small workflow windows
+- Serializable wrapper types such as `Utility.SerializableVector2`, `Utility.SerializableRect`, `Utility.SerializableColor`, `Utility.SerializableAudioClip`, `Utility.SerializableMaterial`, `Utility.SerializableLight`, and `Utility.SerializableParticleSystem`
+
+## Requirements
+
+- Unity `2020.3.17f1` or newer
+- `com.unity.mathematics` `1.2.6`
 
 ## Installation
 
-### Using Unity Package Manager (Recommended)
+### Using Unity Package Manager
 
-1. Open the Package Manager window in Unity (Window > Package Manager)
-2. Click the "+" button in the top-left corner
-3. Select "Add package from git URL..."
-4. Enter: `https://github.com/BxB-Studio/Unity-CSharp-Utilities.git`
-5. Click "Add"
+1. Open `Window > Package Manager`.
+2. Select `+ > Add package from git URL...`.
+3. Enter:
 
-For detailed installation instructions, see the [Installation Guide](Documentation/Installation.md).
+```text
+https://github.com/BxB-Studio/Unity-CSharp-Utilities.git
+```
+
+For more setup options, see the [Installation Guide](Documentation/Installation.md).
+
+## Namespaces
+
+Most consumers will use one or more of these namespaces:
+
+- `Utilities`
+- `Utilities.Core`
+- `Utilities.Core.Managed`
+- `Utilities.Editor`
+
+Important: many value types are nested inside the `Utility` class, so their full names are things like `Utility.Interval`, `Utility.Interval2`, `Utility.SerializableColor`, and `Utility.ColorSheet`.
 
 ## Usage Examples
 
-### Extension Methods
+### Runtime extensions
 
 ```csharp
-// Find a child transform using various methods
-Transform child = transform.Find("ChildName", caseSensitive: false);
-Transform startsWith = transform.FindStartsWith("Child");
-Transform endsWith = transform.FindEndsWith("Name");
-Transform contains = transform.FindContains("ild");
+using UnityEngine;
+using Utilities;
 
-// Clamp animation curves
-AnimationCurve clampedCurve = originalCurve.Clamp01();
+public class UtilityExamples : MonoBehaviour
+{
+    [SerializeField] private AnimationCurve throttleCurve;
 
-// String utilities
-if (myString.IsNullOrEmpty()) {
-    Debug.Log("String is null or empty");
+    private void Start()
+    {
+        Transform wheel = transform.FindContains("wheel", caseSensitive: false);
+        AnimationCurve safeCurve = throttleCurve.Clamp01();
+
+        if ("  ".IsNullOrWhiteSpace())
+        {
+            Debug.Log(wheel ? "Wheel found" : "Wheel not found");
+        }
+    }
 }
 ```
 
-### Data Serialization
+### Utility nested types and unit helpers
 
 ```csharp
-// Serialize and deserialize data
-var dataUtil = new DataSerializationUtility<MyDataClass>("SavedData.dat", false);
-var myData = new MyDataClass();
+using UnityEngine;
+using Utilities;
 
-// Save data
-dataUtil.SaveOrCreate(myData);
+public class IntervalExample : MonoBehaviour
+{
+    private void Start()
+    {
+        Utility.Interval suspensionTravel = new Utility.Interval(0f, 0.2f);
+        float halfTravel = suspensionTravel.Lerp(0.5f);
 
-// Load data
-var loadedData = dataUtil.Load();
+        string metric = Utility.NumberToValueWithUnit(27f, Utility.Units.Speed, Utility.UnitType.Metric, 1);
+        Debug.Log($"{halfTravel:F3} m, {metric}");
+    }
+}
 ```
 
-### Math & Vector Operations
+### Binary serialization
 
 ```csharp
-// Useful math operations
-float average = Utility.Average(1.0f, 2.0f, 3.0f, 4.0f);
-Vector3 averagePosition = Utility.Average(position1, position2, position3);
-float dist = Utility.Distance(transform1, transform2);
+using System;
+using UnityEngine;
+using Utilities;
 
-// Interval operations
-var interval = new Interval(0f, 1f);
-float lerpedValue = interval.Lerp(0.5f);
+[Serializable]
+public class PlayerSaveData
+{
+    public string playerName;
+    public int score;
+}
+
+public class SaveExample : MonoBehaviour
+{
+    private readonly DataSerializationUtility<PlayerSaveData> serializer =
+        new DataSerializationUtility<PlayerSaveData>("SaveData/Player.dat", false, bypassExceptions: true);
+
+    private void Start()
+    {
+        serializer.SaveOrCreate(new PlayerSaveData
+        {
+            playerName = "Player 1",
+            score = 9000
+        });
+
+        PlayerSaveData loaded = serializer.Load();
+        Debug.Log(loaded != null ? loaded.playerName : "No save file");
+    }
+}
 ```
 
-### Editor Utilities
+### Core references and singleton patterns
 
 ```csharp
-// Use in custom editors
-EditorUtilities.AddScriptingDefineSymbol("MY_DEFINE");
-bool hasSymbol = EditorUtilities.ScriptingDefineSymbolExists("MY_DEFINE");
+using UnityEngine;
+using Utilities.Core;
+using Utilities.Core.Managed;
 
-// Use editor styles
-GUIStyle buttonStyle = EditorUtilities.Styles.ButtonActive;
+public sealed class AudioManager : BehaviourSingleton<AudioManager>
+{
+    public override bool Persistent => true;
+}
+
+public class PrefabSpawner : MonoBehaviour
+{
+    [SerializeField] private ResourcesReference<GameObject> prefabReference;
+
+    private void Start()
+    {
+        GameObject prefab = prefabReference.Load();
+
+        if (prefab != null)
+            Instantiate(prefab);
+    }
+}
 ```
+
+### Editor utilities
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+using Utilities.Editor;
+
+public static class UtilityEditorExample
+{
+    [MenuItem("Tools/Utilities/Examples/Add Gameplay Layer")]
+    private static void AddGameplayLayer()
+    {
+        if (!LayersManager.LayerExists("Gameplay"))
+            LayersManager.AddLayer("Gameplay");
+
+        EditorUtilities.AddScriptingDefineSymbol("GAMEPLAY_LAYER_READY");
+    }
+}
+#endif
+```
+
+## Included Editor Tools
+
+The package adds several menu-driven utilities under `Tools/Utilities`, including:
+
+- Units Converter
+- Wheel Radius Calculator
+- GameObject bounds and mesh debugging
+- Place selected object on the zero surface
+- Texture2DArray export helpers
 
 ## Documentation
 
-For detailed documentation, see:
-- [Getting Started Guide](Documentation/GettingStarted.md)
+- [Getting Started](Documentation/GettingStarted.md)
 - [API Reference](Documentation/APIReference.md)
 - [Installation Guide](Documentation/Installation.md)
 
-Each script in the library also contains comprehensive XML documentation comments that can be accessed through IntelliSense in your code editor.
-
-## Core Components
-
-### Utility Class
-The main utility class provides hundreds of helper methods and extensions for common tasks.
-
-### Data Serialization
-`DataSerializationUtility<T>` simplifies saving and loading serializable data.
-
-### Editor Utilities
-Tools to enhance the Unity Editor workflow with custom UI styles, icons, and debugging helpers.
-
-### Math Structures
-Custom structures like `Interval`, `SimpleInterval`, `Interval2`, `Interval3` that provide mathematical operations not available in Unity.
-
-### Serializable Types
-Serializable versions of common Unity types like `SerializableVector2`, `SerializableColor`, etc.
-
-## Contributing
-
-We welcome contributions to this library! If you'd like to contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md).
 
 ---
 
